@@ -1,0 +1,6 @@
+{
+  "name": "Naam Jap Counter - Android App",
+  "description": "Official website for Naam Jap Counter by Shekhar Kumar. Simple and reliable digital Naam Jap counter for Android to count daily Naam Jap, maintain goals, and view history.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
