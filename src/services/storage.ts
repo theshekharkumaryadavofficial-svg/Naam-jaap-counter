@@ -14,6 +14,20 @@ import {
   initialFaqs,
   initialSiteConfig,
 } from '../data/initialData';
+import { db } from './firebase';
+import {
+  collection,
+  doc,
+  getDocs,
+  setDoc,
+  deleteDoc,
+  onSnapshot,
+  query,
+  orderBy,
+} from 'firebase/firestore';
+
+export const OWNER_NAME = 'Shekhar Kumar';
+export const ADMIN_PASSWORD = 'shekhar@32123';
 
 const STORAGE_KEYS = {
   CONFIG: 'njc_site_config_v2',
@@ -25,20 +39,6 @@ const STORAGE_KEYS = {
   ANALYTICS: 'njc_analytics_v2',
   ADMIN_AUTH: 'njc_admin_auth_v2',
 };
-
-// Clean up legacy v1 dummy data if present
-try {
-  const legacyKeys = [
-    'njc_site_config_v1',
-    'njc_apk_releases_v1',
-    'njc_contact_messages_v1',
-    'njc_analytics_v1',
-    'njc_admin_auth_v1',
-  ];
-  legacyKeys.forEach((k) => localStorage.removeItem(k));
-} catch {
-  // Ignore in SSR/restricted environments
-}
 
 // Event dispatcher for reactive updates
 type StorageListener = () => void;
@@ -61,31 +61,173 @@ function notifyListeners() {
   });
 }
 
-// 1. Site Config
-export function getSiteConfig(): SiteConfig {
+// Global in-memory cache synchronized with Firebase Cloud Firestore
+let cachedConfig: SiteConfig = initialSiteConfig;
+let cachedReleases: ApkRelease[] = initialApkReleases;
+let cachedScreenshots: ScreenshotItem[] = initialScreenshots;
+let cachedFeatures: FeatureItem[] = initialFeatures;
+let cachedFaqs: FaqItem[] = initialFaqs;
+let cachedMessages: ContactMessage[] = [];
+
+// Initialize local cache from localStorage if available
+try {
+  const localCfg = localStorage.getItem(STORAGE_KEYS.CONFIG);
+  if (localCfg) cachedConfig = JSON.parse(localCfg);
+
+  const localRel = localStorage.getItem(STORAGE_KEYS.RELEASES);
+  if (localRel) cachedReleases = JSON.parse(localRel);
+
+  const localScr = localStorage.getItem(STORAGE_KEYS.SCREENSHOTS);
+  if (localScr) cachedScreenshots = JSON.parse(localScr);
+
+  const localFeat = localStorage.getItem(STORAGE_KEYS.FEATURES);
+  if (localFeat) cachedFeatures = JSON.parse(localFeat);
+
+  const localFaq = localStorage.getItem(STORAGE_KEYS.FAQS);
+  if (localFaq) cachedFaqs = JSON.parse(localFaq);
+
+  const localMsg = localStorage.getItem(STORAGE_KEYS.MESSAGES);
+  if (localMsg) cachedMessages = JSON.parse(localMsg);
+} catch (e) {
+  console.warn('Could not load local cache fallback', e);
+}
+
+// ----------------------------------------------------
+// REAL-TIME FIRESTORE SYNCHRONIZATION
+// ----------------------------------------------------
+let isFirestoreInitialized = false;
+
+export function initFirestoreRealtimeSync() {
+  if (isFirestoreInitialized) return;
+  isFirestoreInitialized = true;
+
   try {
-    const raw = localStorage.getItem(STORAGE_KEYS.CONFIG);
-    if (raw) return JSON.parse(raw);
-  } catch (e) {
-    console.error('Failed reading site config', e);
+    // 1. Site Config Sync
+    const configDocRef = doc(db, 'site_config', 'main');
+    onSnapshot(configDocRef, (snap) => {
+      if (snap.exists()) {
+        cachedConfig = snap.data() as SiteConfig;
+        localStorage.setItem(STORAGE_KEYS.CONFIG, JSON.stringify(cachedConfig));
+        notifyListeners();
+      } else {
+        // Seed default config to cloud
+        setDoc(configDocRef, initialSiteConfig, { merge: true });
+      }
+    }, (err) => console.warn('Config snapshot error:', err));
+
+    // 2. APK Releases Sync
+    const releasesColl = collection(db, 'apk_releases');
+    onSnapshot(releasesColl, (snap) => {
+      if (!snap.empty) {
+        const items: ApkRelease[] = [];
+        snap.forEach((d) => items.push({ ...d.data(), id: d.id } as ApkRelease));
+        // Sort latest first
+        items.sort((a, b) => (b.isLatest ? 1 : 0) - (a.isLatest ? 1 : 0));
+        cachedReleases = items;
+        localStorage.setItem(STORAGE_KEYS.RELEASES, JSON.stringify(cachedReleases));
+        notifyListeners();
+      } else {
+        // Seed initial APK release to cloud
+        initialApkReleases.forEach((rel) => {
+          setDoc(doc(db, 'apk_releases', rel.id), rel);
+        });
+      }
+    }, (err) => console.warn('Releases snapshot error:', err));
+
+    // 3. Screenshots Sync
+    const screenshotsColl = collection(db, 'screenshots');
+    onSnapshot(screenshotsColl, (snap) => {
+      if (!snap.empty) {
+        const items: ScreenshotItem[] = [];
+        snap.forEach((d) => items.push({ ...d.data(), id: d.id } as ScreenshotItem));
+        items.sort((a, b) => a.displayOrder - b.displayOrder);
+        cachedScreenshots = items;
+        localStorage.setItem(STORAGE_KEYS.SCREENSHOTS, JSON.stringify(cachedScreenshots));
+        notifyListeners();
+      } else {
+        // Seed initial screenshots to cloud
+        initialScreenshots.forEach((s) => {
+          setDoc(doc(db, 'screenshots', s.id), s);
+        });
+      }
+    }, (err) => console.warn('Screenshots snapshot error:', err));
+
+    // 4. Features Sync
+    const featuresColl = collection(db, 'features');
+    onSnapshot(featuresColl, (snap) => {
+      if (!snap.empty) {
+        const items: FeatureItem[] = [];
+        snap.forEach((d) => items.push({ ...d.data(), id: d.id } as FeatureItem));
+        items.sort((a, b) => a.displayOrder - b.displayOrder);
+        cachedFeatures = items;
+        localStorage.setItem(STORAGE_KEYS.FEATURES, JSON.stringify(cachedFeatures));
+        notifyListeners();
+      } else {
+        initialFeatures.forEach((f) => {
+          setDoc(doc(db, 'features', f.id), f);
+        });
+      }
+    }, (err) => console.warn('Features snapshot error:', err));
+
+    // 5. FAQs Sync
+    const faqsColl = collection(db, 'faqs');
+    onSnapshot(faqsColl, (snap) => {
+      if (!snap.empty) {
+        const items: FaqItem[] = [];
+        snap.forEach((d) => items.push({ ...d.data(), id: d.id } as FaqItem));
+        items.sort((a, b) => a.displayOrder - b.displayOrder);
+        cachedFaqs = items;
+        localStorage.setItem(STORAGE_KEYS.FAQS, JSON.stringify(cachedFaqs));
+        notifyListeners();
+      } else {
+        initialFaqs.forEach((fq) => {
+          setDoc(doc(db, 'faqs', fq.id), fq);
+        });
+      }
+    }, (err) => console.warn('FAQs snapshot error:', err));
+
+    // 6. Contact Messages Sync
+    const messagesColl = collection(db, 'contact_messages');
+    onSnapshot(messagesColl, (snap) => {
+      const items: ContactMessage[] = [];
+      snap.forEach((d) => items.push({ ...d.data(), id: d.id } as ContactMessage));
+      items.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+      cachedMessages = items;
+      localStorage.setItem(STORAGE_KEYS.MESSAGES, JSON.stringify(cachedMessages));
+      notifyListeners();
+    }, (err) => console.warn('Messages snapshot error:', err));
+
+  } catch (err) {
+    console.error('Failed to initialize Firestore real-time sync:', err);
   }
-  return initialSiteConfig;
+}
+
+// Auto-start sync immediately
+initFirestoreRealtimeSync();
+
+// ----------------------------------------------------
+// GETTERS
+// ----------------------------------------------------
+
+export function getSiteConfig(): SiteConfig {
+  return cachedConfig;
 }
 
 export function saveSiteConfig(config: SiteConfig) {
+  cachedConfig = config;
   localStorage.setItem(STORAGE_KEYS.CONFIG, JSON.stringify(config));
   notifyListeners();
+
+  // Save to Firestore Cloud
+  try {
+    setDoc(doc(db, 'site_config', 'main'), config, { merge: true });
+  } catch (e) {
+    console.error('Failed to save config to Firestore', e);
+  }
 }
 
-// 2. APK Releases
 export function getApkReleases(): ApkRelease[] {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEYS.RELEASES);
-    if (raw) return JSON.parse(raw);
-  } catch (e) {
-    console.error('Failed reading APK releases', e);
-  }
-  return initialApkReleases;
+  return cachedReleases;
 }
 
 export function getLatestApk(): ApkRelease | undefined {
@@ -94,24 +236,44 @@ export function getLatestApk(): ApkRelease | undefined {
 }
 
 export function saveApkReleases(releases: ApkRelease[]) {
+  cachedReleases = releases;
   localStorage.setItem(STORAGE_KEYS.RELEASES, JSON.stringify(releases));
   notifyListeners();
 }
 
-export function addOrUpdateApk(apk: ApkRelease, replaceAll: boolean = false) {
-  let releases = getApkReleases();
+export async function addOrUpdateApk(apk: ApkRelease, replaceAll: boolean = false) {
+  let releases = [...cachedReleases];
 
   if (replaceAll) {
-    // Replace all previous APK releases with this newly uploaded APK
     apk.isLatest = true;
     releases = [apk];
-  } else {
-    const existingIndex = releases.findIndex((r) => r.id === apk.id);
 
+    // Remove old docs from Firestore
+    try {
+      const snap = await getDocs(collection(db, 'apk_releases'));
+      snap.forEach(async (d) => {
+        if (d.id !== apk.id) await deleteDoc(d.ref);
+      });
+    } catch (e) {
+      console.warn('Error clearing old APKs in firestore', e);
+    }
+  } else {
     if (apk.isLatest) {
       releases = releases.map((r) => ({ ...r, isLatest: false }));
+      // Update other documents in Firestore
+      try {
+        const snap = await getDocs(collection(db, 'apk_releases'));
+        snap.forEach((d) => {
+          if (d.id !== apk.id) {
+            setDoc(d.ref, { isLatest: false }, { merge: true });
+          }
+        });
+      } catch (e) {
+        console.warn('Error updating isLatest on old APKs', e);
+      }
     }
 
+    const existingIndex = releases.findIndex((r) => r.id === apk.id);
     if (existingIndex >= 0) {
       releases[existingIndex] = apk;
     } else {
@@ -121,165 +283,229 @@ export function addOrUpdateApk(apk: ApkRelease, replaceAll: boolean = false) {
 
   saveApkReleases(releases);
   recordActivity('APK Update', `Version ${apk.version} ${apk.isPublished ? 'published' : 'saved as draft'}`);
+
+  // Save document to Firestore Cloud
+  try {
+    await setDoc(doc(db, 'apk_releases', apk.id), apk);
+  } catch (e) {
+    console.error('Failed saving APK to cloud Firestore', e);
+  }
 }
 
-export function deleteApk(id: string) {
-  let releases = getApkReleases();
-  const target = releases.find((r) => r.id === id);
-  releases = releases.filter((r) => r.id !== id);
-
-  if (target?.isLatest && releases.length > 0) {
+export async function deleteApk(id: string) {
+  let releases = cachedReleases.filter((r) => r.id !== id);
+  if (releases.length > 0 && !releases.some((r) => r.isLatest)) {
     const nextPub = releases.find((r) => r.isPublished);
     if (nextPub) nextPub.isLatest = true;
   }
 
   saveApkReleases(releases);
-  recordActivity('APK Deleted', `Version ${target?.version || id} removed`);
+  recordActivity('APK Deleted', `Version ${id} removed`);
+
+  // Delete from Firestore Cloud
+  try {
+    await deleteDoc(doc(db, 'apk_releases', id));
+  } catch (e) {
+    console.error('Failed deleting APK from Firestore', e);
+  }
 }
 
-// 3. Screenshots
+// ----------------------------------------------------
+// SCREENSHOTS
+// ----------------------------------------------------
+
 export function getScreenshots(): ScreenshotItem[] {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEYS.SCREENSHOTS);
-    if (raw) return JSON.parse(raw);
-  } catch (e) {
-    console.error('Failed reading screenshots', e);
-  }
-  return initialScreenshots;
+  return cachedScreenshots;
 }
 
 export function saveScreenshots(screenshots: ScreenshotItem[]) {
+  cachedScreenshots = screenshots;
   localStorage.setItem(STORAGE_KEYS.SCREENSHOTS, JSON.stringify(screenshots));
   notifyListeners();
 }
 
-export function addOrUpdateScreenshot(screenshot: ScreenshotItem, replaceAll: boolean = false) {
-  let list = getScreenshots();
+export async function addOrUpdateScreenshot(screenshot: ScreenshotItem, replaceAll: boolean = false) {
+  let list = [...cachedScreenshots];
 
   if (replaceAll) {
-    // Replace all screenshots with this new one
-    list = [screenshot];
+    list = [{ ...screenshot, displayOrder: 1 }];
+    try {
+      const snap = await getDocs(collection(db, 'screenshots'));
+      snap.forEach(async (d) => {
+        if (d.id !== screenshot.id) await deleteDoc(d.ref);
+      });
+    } catch (e) {
+      console.warn('Error replacing screenshots in firestore', e);
+    }
   } else {
-    const idx = list.findIndex((s) => s.id === screenshot.id);
-    if (idx >= 0) {
-      list[idx] = screenshot;
+    const existingIndex = list.findIndex((s) => s.id === screenshot.id);
+    if (existingIndex >= 0) {
+      list[existingIndex] = screenshot;
     } else {
       list.push(screenshot);
     }
   }
 
-  list.sort((a, b) => a.displayOrder - b.displayOrder);
   saveScreenshots(list);
-  recordActivity('Screenshot Updated', `Screen "${screenshot.title}" saved`);
+  recordActivity('Screenshot Added', screenshot.title);
+
+  // Save to Firestore Cloud
+  try {
+    await setDoc(doc(db, 'screenshots', screenshot.id), screenshot);
+  } catch (e) {
+    console.error('Failed saving screenshot to cloud', e);
+  }
 }
 
-export function replaceScreenshotImage(targetId: string, newImageUrl: string) {
-  const list = getScreenshots();
-  const target = list.find((s) => s.id === targetId);
+export async function replaceScreenshotImage(id: string, newImageUrl: string) {
+  const list = [...cachedScreenshots];
+  const target = list.find((s) => s.id === id);
   if (target) {
     target.imageUrl = newImageUrl;
-    target.type = 'custom_image';
+    target.updatedAt = new Date().toISOString();
     saveScreenshots(list);
-    recordActivity('Screenshot Replaced', `Image for "${target.title}" replaced with upload`);
+    recordActivity('Screenshot Replaced', `Image replaced for ${target.title}`);
+
+    // Update in Firestore
+    try {
+      await setDoc(doc(db, 'screenshots', id), { imageUrl: newImageUrl, updatedAt: target.updatedAt }, { merge: true });
+    } catch (e) {
+      console.error('Failed updating screenshot image in Firestore', e);
+    }
   }
 }
 
-export function replaceAllScreenshots(newScreens: ScreenshotItem[]) {
-  saveScreenshots(newScreens);
-  recordActivity('Screenshots Reset', 'Screenshots replaced with new uploaded images');
-}
+export async function replaceAllScreenshots(newScreenshots: ScreenshotItem[]) {
+  saveScreenshots(newScreenshots);
+  recordActivity('Screenshots Updated', `Replaced all screenshots with ${newScreenshots.length} new items`);
 
-export function deleteScreenshot(id: string) {
-  let list = getScreenshots();
-  const target = list.find((s) => s.id === id);
-  list = list.filter((s) => s.id !== id);
-  saveScreenshots(list);
-  recordActivity('Screenshot Removed', `Screen "${target?.title || id}" deleted`);
-}
-
-// 4. Features & FAQs
-export function getFeatures(): FeatureItem[] {
   try {
-    const raw = localStorage.getItem(STORAGE_KEYS.FEATURES);
-    if (raw) return JSON.parse(raw);
+    const snap = await getDocs(collection(db, 'screenshots'));
+    snap.forEach(async (d) => await deleteDoc(d.ref));
+    newScreenshots.forEach(async (s) => {
+      await setDoc(doc(db, 'screenshots', s.id), s);
+    });
   } catch (e) {
-    console.error('Failed reading features', e);
+    console.error('Failed replacing all screenshots in Firestore', e);
   }
-  return initialFeatures;
 }
 
-export function saveFeatures(features: FeatureItem[]) {
+export async function deleteScreenshot(id: string) {
+  const target = cachedScreenshots.find((s) => s.id === id);
+  const list = cachedScreenshots.filter((s) => s.id !== id);
+  saveScreenshots(list);
+  recordActivity('Screenshot Deleted', target?.title || id);
+
+  try {
+    await deleteDoc(doc(db, 'screenshots', id));
+  } catch (e) {
+    console.error('Failed deleting screenshot from Firestore', e);
+  }
+}
+
+// ----------------------------------------------------
+// FEATURES & FAQS
+// ----------------------------------------------------
+
+export function getFeatures(): FeatureItem[] {
+  return cachedFeatures;
+}
+
+export async function saveFeatures(features: FeatureItem[]) {
+  cachedFeatures = features;
   localStorage.setItem(STORAGE_KEYS.FEATURES, JSON.stringify(features));
   notifyListeners();
+
+  try {
+    const snap = await getDocs(collection(db, 'features'));
+    snap.forEach(async (d) => await deleteDoc(d.ref));
+    features.forEach(async (f) => {
+      await setDoc(doc(db, 'features', f.id), f);
+    });
+  } catch (e) {
+    console.error('Failed saving features to Firestore', e);
+  }
 }
 
 export function getFaqs(): FaqItem[] {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEYS.FAQS);
-    if (raw) return JSON.parse(raw);
-  } catch (e) {
-    console.error('Failed reading faqs', e);
-  }
-  return initialFaqs;
+  return cachedFaqs;
 }
 
-export function saveFaqs(faqs: FaqItem[]) {
+export async function saveFaqs(faqs: FaqItem[]) {
+  cachedFaqs = faqs;
   localStorage.setItem(STORAGE_KEYS.FAQS, JSON.stringify(faqs));
   notifyListeners();
-}
 
-// 5. Contact Messages (Zero dummy messages)
-export function getContactMessages(): ContactMessage[] {
   try {
-    const raw = localStorage.getItem(STORAGE_KEYS.MESSAGES);
-    if (raw) return JSON.parse(raw);
+    const snap = await getDocs(collection(db, 'faqs'));
+    snap.forEach(async (d) => await deleteDoc(d.ref));
+    faqs.forEach(async (fq) => {
+      await setDoc(doc(db, 'faqs', fq.id), fq);
+    });
   } catch (e) {
-    console.error('Failed reading messages', e);
+    console.error('Failed saving FAQs to Firestore', e);
   }
-  return [];
 }
 
-export function submitContactMessage(name: string, email: string, message: string): ContactMessage {
-  const messages = getContactMessages();
-  const dateStr = new Date().toLocaleString('en-IN', {
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
+// ----------------------------------------------------
+// CONTACT MESSAGES
+// ----------------------------------------------------
+
+export function getContactMessages(): ContactMessage[] {
+  return cachedMessages;
+}
+
+export async function submitContactMessage(name: string, email: string, message: string) {
   const newMsg: ContactMessage = {
-    id: 'msg-' + Date.now(),
+    id: `msg-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
     name,
     email,
     message,
-    createdAt: dateStr,
-    read: false,
+    timestamp: new Date().toISOString(),
+    isRead: false,
   };
-  messages.unshift(newMsg);
-  localStorage.setItem(STORAGE_KEYS.MESSAGES, JSON.stringify(messages));
-  recordActivity('New Message', `Feedback received from ${name}`);
-  notifyListeners();
-  return newMsg;
-}
 
-export function markMessageRead(id: string) {
-  const messages = getContactMessages();
-  const msg = messages.find((m) => m.id === id);
-  if (msg) {
-    msg.read = true;
-    localStorage.setItem(STORAGE_KEYS.MESSAGES, JSON.stringify(messages));
-    notifyListeners();
+  cachedMessages = [newMsg, ...cachedMessages];
+  localStorage.setItem(STORAGE_KEYS.MESSAGES, JSON.stringify(cachedMessages));
+  notifyListeners();
+
+  try {
+    await setDoc(doc(db, 'contact_messages', newMsg.id), newMsg);
+  } catch (e) {
+    console.error('Failed sending message to Firestore', e);
   }
 }
 
-export function deleteMessage(id: string) {
-  const messages = getContactMessages().filter((m) => m.id !== id);
-  localStorage.setItem(STORAGE_KEYS.MESSAGES, JSON.stringify(messages));
+export async function markMessageRead(id: string) {
+  const list = cachedMessages.map((m) => (m.id === id ? { ...m, isRead: true } : m));
+  cachedMessages = list;
+  localStorage.setItem(STORAGE_KEYS.MESSAGES, JSON.stringify(list));
   notifyListeners();
+
+  try {
+    await setDoc(doc(db, 'contact_messages', id), { isRead: true }, { merge: true });
+  } catch (e) {
+    console.error('Failed marking message read in Firestore', e);
+  }
 }
 
-// 6. Analytics (Zero dummy data, real counts from clean zero)
+export async function deleteMessage(id: string) {
+  const list = cachedMessages.filter((m) => m.id !== id);
+  cachedMessages = list;
+  localStorage.setItem(STORAGE_KEYS.MESSAGES, JSON.stringify(list));
+  notifyListeners();
+
+  try {
+    await deleteDoc(doc(db, 'contact_messages', id));
+  } catch (e) {
+    console.error('Failed deleting message in Firestore', e);
+  }
+}
+
+// ----------------------------------------------------
+// ANALYTICS & ACTIVITY LOGS
+// ----------------------------------------------------
+
 export function getAnalytics(): WebsiteAnalytics {
   try {
     const raw = localStorage.getItem(STORAGE_KEYS.ANALYTICS);
@@ -288,20 +514,13 @@ export function getAnalytics(): WebsiteAnalytics {
     console.error('Failed reading analytics', e);
   }
   return {
-    totalVisits: 0,
-    apkDownloads: 0,
-    screenshotViews: 0,
-    pageViews: {
-      Home: 0,
-      Features: 0,
-      Screenshots: 0,
-      Download: 0,
-      Updates: 0,
-      FAQ: 0,
-      Privacy: 0,
-      Contact: 0,
-    },
-    recentActivity: [],
+    totalVisitors: 1,
+    todayVisitors: 1,
+    totalDownloads: 0,
+    versionDownloads: {},
+    screenshotViews: {},
+    dailyVisits: [{ date: new Date().toISOString().split('T')[0], count: 1 }],
+    recentActivities: [],
   };
 }
 
@@ -310,59 +529,70 @@ export function saveAnalytics(analytics: WebsiteAnalytics) {
   notifyListeners();
 }
 
-export function recordVisit(section: string = 'Home') {
-  const analytics = getAnalytics();
-  analytics.totalVisits += 1;
-  analytics.pageViews[section] = (analytics.pageViews[section] || 0) + 1;
-  saveAnalytics(analytics);
+export function recordVisit(page: string = 'Home') {
+  const a = getAnalytics();
+  const today = new Date().toISOString().split('T')[0];
+
+  a.totalVisitors = (a.totalVisitors || 0) + 1;
+  a.todayVisitors = (a.todayVisitors || 0) + 1;
+
+  if (!a.dailyVisits) a.dailyVisits = [];
+  const existingDay = a.dailyVisits.find((d) => d.date === today);
+  if (existingDay) {
+    existingDay.count += 1;
+  } else {
+    a.dailyVisits.push({ date: today, count: 1 });
+    if (a.dailyVisits.length > 30) a.dailyVisits.shift();
+  }
+
+  saveAnalytics(a);
 }
 
 export function recordApkDownload(version: string) {
-  const analytics = getAnalytics();
-  analytics.apkDownloads += 1;
-  const releases = getApkReleases();
-  const rel = releases.find((r) => r.version === version);
-  if (rel) {
-    rel.downloadsCount = (rel.downloadsCount || 0) + 1;
-    saveApkReleases(releases);
-  }
-  recordActivity('APK Download', `Version ${version} downloaded`);
-  saveAnalytics(analytics);
+  const a = getAnalytics();
+  a.totalDownloads = (a.totalDownloads || 0) + 1;
+  if (!a.versionDownloads) a.versionDownloads = {};
+  a.versionDownloads[version] = (a.versionDownloads[version] || 0) + 1;
+
+  if (!a.recentActivities) a.recentActivities = [];
+  a.recentActivities.unshift({
+    id: `act-${Date.now()}`,
+    action: 'APK Downloaded',
+    details: `Version ${version} downloaded by user`,
+    timestamp: new Date().toISOString(),
+  });
+  if (a.recentActivities.length > 50) a.recentActivities.pop();
+
+  saveAnalytics(a);
 }
 
 export function recordScreenshotView(title: string) {
-  const analytics = getAnalytics();
-  analytics.screenshotViews += 1;
-  saveAnalytics(analytics);
+  const a = getAnalytics();
+  if (!a.screenshotViews) a.screenshotViews = {};
+  a.screenshotViews[title] = (a.screenshotViews[title] || 0) + 1;
+  saveAnalytics(a);
 }
 
 export function recordActivity(action: string, details: string) {
-  const analytics = getAnalytics();
-  const timeStr = 'Just now';
-  analytics.recentActivity.unshift({
-    id: 'act-' + Date.now(),
+  const a = getAnalytics();
+  if (!a.recentActivities) a.recentActivities = [];
+  a.recentActivities.unshift({
+    id: `act-${Date.now()}`,
     action,
-    time: timeStr,
     details,
+    timestamp: new Date().toISOString(),
   });
-  if (analytics.recentActivity.length > 20) {
-    analytics.recentActivity = analytics.recentActivity.slice(0, 20);
-  }
-  saveAnalytics(analytics);
+  if (a.recentActivities.length > 50) a.recentActivities.pop();
+  saveAnalytics(a);
 }
 
-// 7. Admin Auth with Password shekhar@32123
+// ----------------------------------------------------
+// AUTHENTICATION
+// ----------------------------------------------------
+
 export interface AdminUser {
   name: string;
-  role: 'owner';
-  authenticatedAt: string;
-}
-
-export const ADMIN_PASSWORD = 'shekhar@32123';
-export const OWNER_NAME = 'Shekhar Kumar';
-
-export function verifyAdminPassword(inputPass: string): boolean {
-  return inputPass.trim() === ADMIN_PASSWORD;
+  loginTime: string;
 }
 
 export function getAdminAuth(): AdminUser | null {
@@ -370,7 +600,7 @@ export function getAdminAuth(): AdminUser | null {
     const raw = localStorage.getItem(STORAGE_KEYS.ADMIN_AUTH);
     if (raw) return JSON.parse(raw);
   } catch (e) {
-    console.error('Failed reading admin session', e);
+    console.error('Failed reading admin auth', e);
   }
   return null;
 }
@@ -381,5 +611,8 @@ export function setAdminAuth(user: AdminUser | null) {
   } else {
     localStorage.removeItem(STORAGE_KEYS.ADMIN_AUTH);
   }
-  notifyListeners();
+}
+
+export function verifyAdminPassword(password: string): boolean {
+  return password === ADMIN_PASSWORD;
 }

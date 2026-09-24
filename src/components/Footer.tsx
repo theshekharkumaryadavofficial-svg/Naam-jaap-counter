@@ -6,23 +6,36 @@ import { SiteConfig } from '../types';
 interface FooterProps {
   config: SiteConfig;
   onAdminClick: () => void;
+  onNavigate?: (path: string) => void;
 }
 
-export const Footer: React.FC<FooterProps> = ({ config, onAdminClick }) => {
+export const Footer: React.FC<FooterProps> = ({ config, onAdminClick, onNavigate }) => {
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const navLinks = [
-    { label: 'Home', href: '#home' },
-    { label: 'Features', href: '#features' },
-    { label: 'Screenshots', href: '#screenshots' },
-    { label: 'Updates', href: '#updates' },
-    { label: 'Download', href: '#download' },
-    { label: 'FAQ', href: '#faq' },
-    { label: 'Privacy', href: '#privacy' },
-    { label: 'Contact', href: '#contact' },
+    { label: 'Home', path: '/', hash: '#home' },
+    { label: 'Features', path: '/features', hash: '#features' },
+    { label: 'Screenshots', path: '/screenshots', hash: '#screenshots' },
+    { label: 'Updates', path: '/updates', hash: '#updates' },
+    { label: 'Download', path: '/download', hash: '#download' },
+    { label: 'FAQ', path: '/faq', hash: '#faq' },
+    { label: 'Privacy', path: '/privacy', hash: '#privacy' },
+    { label: 'Contact', path: '/contact', hash: '#contact' },
   ];
+
+  const handleLinkClick = (e: React.MouseEvent<HTMLAnchorElement>, path: string, hash: string) => {
+    e.preventDefault();
+    if (onNavigate) {
+      onNavigate(path);
+    } else {
+      const target = document.querySelector(hash);
+      if (target) {
+        target.scrollIntoView({ behavior: 'smooth' });
+      }
+    }
+  };
 
   return (
     <footer className="bg-[#111827] text-slate-400 py-14 border-t border-slate-800">
@@ -44,11 +57,12 @@ export const Footer: React.FC<FooterProps> = ({ config, onAdminClick }) => {
           </div>
 
           {/* Navigation Links Mirror */}
-          <nav className="flex flex-wrap items-center gap-x-6 gap-y-2 text-xs font-medium text-slate-300">
+          <nav className="flex flex-wrap items-center gap-x-6 gap-y-2 text-xs font-medium text-slate-300" aria-label="Footer Navigation">
             {navLinks.map((link) => (
               <a
                 key={link.label}
-                href={link.href}
+                href={link.path}
+                onClick={(e) => handleLinkClick(e, link.path, link.hash)}
                 className="hover:text-amber-400 transition-colors"
               >
                 {link.label}

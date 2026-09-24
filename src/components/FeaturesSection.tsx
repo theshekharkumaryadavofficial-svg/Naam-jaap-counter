@@ -11,13 +11,18 @@ import {
   TrendingUp,
   Layout,
   WifiOff,
+  ArrowRight,
 } from 'lucide-react';
 
 interface FeaturesSectionProps {
   features: FeatureItem[];
+  onDownloadClick?: () => void;
 }
 
-export const FeaturesSection: React.FC<FeaturesSectionProps> = ({ features }) => {
+export const FeaturesSection: React.FC<FeaturesSectionProps> = ({
+  features,
+  onDownloadClick,
+}) => {
   // Mapping of icon names to Lucide icons with subtle thematic soft colors
   const getFeatureIcon = (name: string, index: number) => {
     const iconColors = [
@@ -59,32 +64,58 @@ export const FeaturesSection: React.FC<FeaturesSectionProps> = ({ features }) =>
   return (
     <section id="features" className="py-16 md:py-24 bg-white border-b border-amber-900/10">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center max-w-2xl mx-auto mb-12 md:mb-16">
+        <div className="text-center max-w-3xl mx-auto mb-12 md:mb-16">
           <span className="text-xs font-semibold text-amber-800 tracking-wider">
             APP CAPABILITIES
           </span>
           <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight mt-1 mb-3">
-            App Features
+            Naam Jap Counter Features
           </h2>
-          <p className="text-base text-slate-600">
-            Naam Jap Counter में आपको ये सभी सुविधाएं मिलती हैं।
+          <p className="text-base sm:text-lg text-slate-600">
+            Naam Jap को आसान, नियमित और व्यवस्थित बनाने के लिए डिज़ाइन किए गए मुख्य फ़ीचर्स।
           </p>
         </div>
 
-        {/* Responsive Grid: 2 columns on mobile, 3 columns on tablet, 5 columns on desktop */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-5">
-          {features.map((feature, idx) => (
+        {/* Features Responsive Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
+          {features.map((feat, idx) => (
             <div
-              key={feature.id}
-              className="bg-[#FAF7F2] rounded-2xl p-5 border border-amber-900/10 shadow-xs hover:border-amber-500/40 hover:shadow-md transition-all flex flex-col justify-between"
+              key={feat.id}
+              className="bg-[#FAF7F2] rounded-2xl p-6 border border-amber-900/10 hover:border-amber-900/25 transition-all duration-200 flex flex-col justify-between hover:shadow-sm"
             >
               <div>
-                {getFeatureIcon(feature.iconName, idx)}
-                <h3 className="text-base font-bold text-slate-900 mb-1.5">{feature.title}</h3>
-                <p className="text-xs text-slate-600 leading-relaxed">{feature.description}</p>
+                {getFeatureIcon(feat.iconName, idx)}
+                <h3 className="text-lg font-bold text-slate-900 mb-1">
+                  {feat.title}
+                </h3>
+                {feat.hindiTitle && feat.hindiTitle !== feat.title && (
+                  <p className="text-xs font-medium text-amber-800 mb-2">
+                    {feat.hindiTitle}
+                  </p>
+                )}
+                <p className="text-sm text-slate-600 leading-relaxed">
+                  {feat.description}
+                </p>
               </div>
             </div>
           ))}
+        </div>
+
+        {/* Internal Link to Download */}
+        <div className="mt-12 text-center">
+          <a
+            href="#download"
+            onClick={(e) => {
+              if (onDownloadClick) {
+                e.preventDefault();
+                onDownloadClick();
+              }
+            }}
+            className="inline-flex items-center gap-2 text-sm font-semibold text-emerald-800 hover:text-emerald-700 bg-emerald-50 px-5 py-2.5 rounded-xl border border-emerald-200 transition-colors"
+          >
+            <span>Download Naam Jap Counter to experience all features</span>
+            <ArrowRight className="w-4 h-4" />
+          </a>
         </div>
       </div>
     </section>

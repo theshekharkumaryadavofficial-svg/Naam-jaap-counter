@@ -38,13 +38,13 @@ export const ContactSection: React.FC<ContactSectionProps> = ({ config }) => {
             GET IN TOUCH
           </span>
           <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight mt-1 mb-2">
-            Contact
+            Contact – Naam Jap Counter
           </h2>
           <p className="text-sm font-semibold text-amber-900 mb-1">
             Developer: {config.developer}
           </p>
           <p className="text-sm text-slate-600 max-w-lg mx-auto">
-            “Have feedback, found a bug, or want to suggest a feature? Send a message.”
+            “Have feedback, found a bug, or want to suggest a feature? Send a message directly to the developer.”
           </p>
         </div>
 
@@ -58,98 +58,89 @@ export const ContactSection: React.FC<ContactSectionProps> = ({ config }) => {
               <h3 className="text-xl font-bold text-slate-900 mb-2">
                 संदेश सफलतापूर्वक भेज दिया गया!
               </h3>
-              <p className="text-sm text-slate-600 max-w-md mx-auto mb-5">
-                Thank you for your valuable feedback. Shekhar Kumar will review your message soon.
+              <p className="text-sm text-slate-600 max-w-md mx-auto">
+                धन्यवाद। आपका संदेश डेवलपर को प्राप्त हो गया है। हम जल्द ही आपकी प्रतिक्रिया पर ध्यान देंगे।
               </p>
-              <button
-                type="button"
-                onClick={() => setSubmitted(false)}
-                className="px-5 py-2.5 bg-slate-900 text-white rounded-xl text-xs font-semibold hover:bg-slate-800 transition-colors"
-              >
-                Send Another Message
-              </button>
             </div>
           ) : (
-            <form onSubmit={handleSubmit} className="space-y-5">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                {/* Name */}
-                <div>
-                  <label
-                    htmlFor="contact-name"
-                    className="block text-xs font-bold text-slate-700 mb-1.5"
-                  >
-                    Name <span className="text-red-500">*</span>
-                  </label>
-                  <div className="relative">
-                    <User className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-                    <input
-                      id="contact-name"
-                      type="text"
-                      required
-                      placeholder="आपका नाम (Your Name)"
-                      value={name}
-                      onChange={(e) => setName(e.target.value)}
-                      className="w-full pl-10 pr-4 py-2.5 bg-white border border-amber-900/15 rounded-xl text-sm text-slate-900 placeholder:text-slate-400 focus:outline-hidden focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-all"
-                    />
-                  </div>
-                </div>
-
-                {/* Email */}
-                <div>
-                  <label
-                    htmlFor="contact-email"
-                    className="block text-xs font-bold text-slate-700 mb-1.5"
-                  >
-                    Email <span className="text-red-500">*</span>
-                  </label>
-                  <div className="relative">
-                    <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-                    <input
-                      id="contact-email"
-                      type="email"
-                      required
-                      placeholder="email@example.com"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      className="w-full pl-10 pr-4 py-2.5 bg-white border border-amber-900/15 rounded-xl text-sm text-slate-900 placeholder:text-slate-400 focus:outline-hidden focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-all"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Message */}
+            <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <label
-                  htmlFor="contact-message"
-                  className="block text-xs font-bold text-slate-700 mb-1.5"
+                  htmlFor="contact-name"
+                  className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5"
                 >
-                  Message <span className="text-red-500">*</span>
+                  आपका नाम (Full Name) <span className="text-rose-500">*</span>
                 </label>
                 <div className="relative">
-                  <MessageSquare className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
-                  <textarea
-                    id="contact-message"
+                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                    <User className="w-4 h-4" />
+                  </div>
+                  <input
+                    id="contact-name"
+                    type="text"
                     required
-                    rows={4}
-                    placeholder="अपना संदेश, समस्या या सुझाव यहाँ लिखें..."
-                    value={message}
-                    onChange={(e) => setMessage(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2.5 bg-white border border-amber-900/15 rounded-xl text-sm text-slate-900 placeholder:text-slate-400 focus:outline-hidden focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-all resize-y"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="उदा. राहुल शर्मा"
+                    className="w-full pl-10 pr-4 py-3 bg-white rounded-xl border border-amber-900/20 focus:border-amber-600 focus:ring-2 focus:ring-amber-500/20 text-sm text-slate-900 outline-hidden transition-all"
                   />
                 </div>
               </div>
 
-              {/* Submit button */}
-              <div className="pt-2">
-                <button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 px-8 py-3 bg-emerald-700 hover:bg-emerald-600 active:bg-emerald-800 disabled:opacity-50 text-white font-bold text-sm rounded-xl shadow-xs transition-all cursor-pointer"
+              <div>
+                <label
+                  htmlFor="contact-email"
+                  className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5"
                 >
-                  <Send className="w-4 h-4" />
-                  <span>{isSubmitting ? 'Sending...' : 'Send Message'}</span>
-                </button>
+                  ईमेल पता (Email Address) <span className="text-rose-500">*</span>
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                    <Mail className="w-4 h-4" />
+                  </div>
+                  <input
+                    id="contact-email"
+                    type="email"
+                    required
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="you@example.com"
+                    className="w-full pl-10 pr-4 py-3 bg-white rounded-xl border border-amber-900/20 focus:border-amber-600 focus:ring-2 focus:ring-amber-500/20 text-sm text-slate-900 outline-hidden transition-all"
+                  />
+                </div>
               </div>
+
+              <div>
+                <label
+                  htmlFor="contact-message"
+                  className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5"
+                >
+                  संदेश या सुझाव (Message) <span className="text-rose-500">*</span>
+                </label>
+                <div className="relative">
+                  <div className="absolute top-3 left-3.5 pointer-events-none text-slate-400">
+                    <MessageSquare className="w-4 h-4" />
+                  </div>
+                  <textarea
+                    id="contact-message"
+                    required
+                    rows={4}
+                    value={message}
+                    onChange={(e) => setMessage(e.target.value)}
+                    placeholder="अपना संदेश यहाँ लिखें..."
+                    className="w-full pl-10 pr-4 py-3 bg-white rounded-xl border border-amber-900/20 focus:border-amber-600 focus:ring-2 focus:ring-amber-500/20 text-sm text-slate-900 outline-hidden transition-all resize-y"
+                  />
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                disabled={isSubmitting}
+                className="w-full inline-flex items-center justify-center gap-2 py-3.5 bg-amber-800 hover:bg-amber-900 active:bg-amber-950 text-white font-bold text-sm rounded-xl shadow-md transition-all cursor-pointer disabled:opacity-50"
+              >
+                <Send className="w-4 h-4" />
+                <span>{isSubmitting ? 'भेजा जा रहा है...' : 'संदेश भेजें (Send Message)'}</span>
+              </button>
             </form>
           )}
         </div>

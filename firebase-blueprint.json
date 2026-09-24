@@ -1,0 +1,120 @@
+{
+  "entities": {
+    "SiteConfig": {
+      "title": "Site Configuration",
+      "description": "Global website metadata and branding configuration",
+      "type": "object",
+      "properties": {
+        "appName": { "type": "string" },
+        "developer": { "type": "string" },
+        "heroSubheading": { "type": "string" },
+        "heroSupportingText": { "type": "string" },
+        "downloadButtonText": { "type": "string" },
+        "announcementBanner": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["appName", "developer"]
+    },
+    "ApkRelease": {
+      "title": "APK Release",
+      "description": "Android APK releases available for download",
+      "type": "object",
+      "properties": {
+        "version": { "type": "string" },
+        "releaseDate": { "type": "string" },
+        "fileSize": { "type": "string" },
+        "minAndroid": { "type": "string" },
+        "downloadUrl": { "type": "string" },
+        "fileName": { "type": "string" },
+        "releaseNotes": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "isPublished": { "type": "boolean" },
+        "isLatest": { "type": "boolean" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["version", "downloadUrl", "isPublished", "isLatest"]
+    },
+    "Screenshot": {
+      "title": "Screenshot",
+      "description": "App screenshots showcased on the website",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "subtitle": { "type": "string" },
+        "imageUrl": { "type": "string" },
+        "screenKey": { "type": "string" },
+        "displayOrder": { "type": "number" },
+        "isPublished": { "type": "boolean" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["title", "imageUrl", "displayOrder", "isPublished"]
+    },
+    "Feature": {
+      "title": "App Feature",
+      "description": "Features highlighted on the features section",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "hindiTitle": { "type": "string" },
+        "description": { "type": "string" },
+        "iconName": { "type": "string" },
+        "displayOrder": { "type": "number" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["title", "description", "iconName", "displayOrder"]
+    },
+    "Faq": {
+      "title": "Frequently Asked Question",
+      "description": "FAQ questions and answers",
+      "type": "object",
+      "properties": {
+        "question": { "type": "string" },
+        "answer": { "type": "string" },
+        "displayOrder": { "type": "number" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["question", "answer", "displayOrder"]
+    },
+    "ContactMessage": {
+      "title": "Contact Message",
+      "description": "User submitted inquiries and feedback",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "email": { "type": "string" },
+        "message": { "type": "string" },
+        "timestamp": { "type": "string" },
+        "isRead": { "type": "boolean" }
+      },
+      "required": ["name", "email", "message", "timestamp", "isRead"]
+    }
+  },
+  "firestore": {
+    "/site_config/{configId}": {
+      "schema": "SiteConfig",
+      "description": "Global website configuration document"
+    },
+    "/apk_releases/{releaseId}": {
+      "schema": "ApkRelease",
+      "description": "All published APK releases"
+    },
+    "/screenshots/{screenshotId}": {
+      "schema": "Screenshot",
+      "description": "All published screenshots"
+    },
+    "/features/{featureId}": {
+      "schema": "Feature",
+      "description": "App feature list"
+    },
+    "/faqs/{faqId}": {
+      "schema": "Faq",
+      "description": "App FAQ list"
+    },
+    "/contact_messages/{messageId}": {
+      "schema": "ContactMessage",
+      "description": "Contact form submissions"
+    }
+  }
+}

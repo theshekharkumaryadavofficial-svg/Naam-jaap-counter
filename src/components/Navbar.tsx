@@ -5,28 +5,39 @@ import { Download, Menu, X } from 'lucide-react';
 interface NavbarProps {
   onDownloadClick: () => void;
   onAdminClick?: () => void;
+  activePath?: string;
+  onNavigate?: (path: string) => void;
 }
 
-export const Navbar: React.FC<NavbarProps> = ({ onDownloadClick }) => {
+export const Navbar: React.FC<NavbarProps> = ({
+  onDownloadClick,
+  activePath = '/',
+  onNavigate,
+}) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const navLinks = [
-    { label: 'Home', href: '#home' },
-    { label: 'Features', href: '#features' },
-    { label: 'Screenshots', href: '#screenshots' },
-    { label: 'Updates', href: '#updates' },
-    { label: 'Download', href: '#download' },
-    { label: 'FAQ', href: '#faq' },
-    { label: 'Privacy', href: '#privacy' },
-    { label: 'Contact', href: '#contact' },
+    { label: 'Home', path: '/', hash: '#home' },
+    { label: 'Features', path: '/features', hash: '#features' },
+    { label: 'Screenshots', path: '/screenshots', hash: '#screenshots' },
+    { label: 'Updates', path: '/updates', hash: '#updates' },
+    { label: 'Download', path: '/download', hash: '#download' },
+    { label: 'FAQ', path: '/faq', hash: '#faq' },
+    { label: 'Privacy', path: '/privacy', hash: '#privacy' },
+    { label: 'Contact', path: '/contact', hash: '#contact' },
   ];
 
-  const handleLinkClick = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
+  const handleLinkClick = (e: React.MouseEvent<HTMLAnchorElement>, path: string, hash: string) => {
     e.preventDefault();
     setMobileMenuOpen(false);
-    const target = document.querySelector(href);
-    if (target) {
-      target.scrollIntoView({ behavior: 'smooth' });
+
+    if (onNavigate) {
+      onNavigate(path);
+    } else {
+      const target = document.querySelector(hash);
+      if (target) {
+        target.scrollIntoView({ behavior: 'smooth' });
+      }
     }
   };
 
@@ -35,30 +46,43 @@ export const Navbar: React.FC<NavbarProps> = ({ onDownloadClick }) => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-18 flex items-center justify-between">
         {/* Zone 1: Brand Wordmark with Sacred Lotus Emblem */}
         <a
-          href="#home"
-          onClick={(e) => handleLinkClick(e, '#home')}
+          href="/"
+          onClick={(e) => handleLinkClick(e, '/', '#home')}
           className="flex items-center gap-2.5 group focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-amber-500 rounded-lg p-1"
+          aria-label="Naam Jap Counter Home"
         >
           <div className="w-9 h-9 rounded-xl bg-[#111927] flex items-center justify-center shadow-xs border border-amber-500/20 group-hover:scale-105 transition-transform">
             <LotusIcon size={22} />
           </div>
-          <span className="text-xl font-bold tracking-tight text-slate-900 whitespace-nowrap">
-            Naam Jap Counter
-          </span>
+          <div className="flex flex-col">
+            <span className="text-xl font-bold tracking-tight text-slate-900 whitespace-nowrap leading-tight">
+              Naam Jap Counter
+            </span>
+            <span className="text-[10px] font-medium text-amber-800 tracking-wide hidden sm:block">
+              Developed by Shekhar Kumar
+            </span>
+          </div>
         </a>
 
         {/* Zone 2: Navigation Links (Desktop) */}
-        <nav className="hidden lg:flex items-center gap-7 text-sm font-medium text-slate-600">
-          {navLinks.map((link) => (
-            <a
-              key={link.label}
-              href={link.href}
-              onClick={(e) => handleLinkClick(e, link.href)}
-              className="hover:text-amber-800 transition-colors py-1 relative after:absolute after:bottom-0 after:left-0 after:w-0 after:h-0.5 after:bg-amber-600 hover:after:w-full after:transition-all"
-            >
-              {link.label}
-            </a>
-          ))}
+        <nav className="hidden lg:flex items-center gap-7 text-sm font-medium text-slate-600" aria-label="Main Navigation">
+          {navLinks.map((link) => {
+            const isActive = activePath === link.path;
+            return (
+              <a
+                key={link.label}
+                href={link.path}
+                onClick={(e) => handleLinkClick(e, link.path, link.hash)}
+                className={`py-1 relative transition-colors cursor-pointer ${
+                  isActive
+                    ? 'text-amber-900 font-bold after:w-full after:bg-amber-700'
+                    : 'hover:text-amber-800 after:w-0 hover:after:w-full after:bg-amber-600'
+                } after:absolute after:bottom-0 after:left-0 after:h-0.5 after:transition-all`}
+              >
+                {link.label}
+              </a>
+            );
+          })}
         </nav>
 
         {/* Zone 3: Primary Action & Mobile Hamburger */}
@@ -91,9 +115,13 @@ export const Navbar: React.FC<NavbarProps> = ({ onDownloadClick }) => {
             {navLinks.map((link) => (
               <a
                 key={link.label}
-                href={link.href}
-                onClick={(e) => handleLinkClick(e, link.href)}
-                className="px-3 py-2.5 text-base font-medium text-slate-700 hover:text-amber-800 hover:bg-amber-50/60 rounded-lg transition-colors"
+                href={link.path}
+                onClick={(e) => handleLinkClick(e, link.path, link.hash)}
+                className={`px-3 py-2.5 text-base font-medium rounded-lg transition-colors ${
+                  activePath === link.path
+                    ? 'bg-amber-100/80 text-amber-950 font-bold'
+                    : 'text-slate-700 hover:text-amber-800 hover:bg-amber-50/60'
+                }`}
               >
                 {link.label}
               </a>

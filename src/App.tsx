@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Navbar } from './components/Navbar';
 import { Hero } from './components/Hero';
 import { TrustSection } from './components/TrustSection';
@@ -17,6 +17,8 @@ import { ContactSection } from './components/ContactSection';
 import { Footer } from './components/Footer';
 import { MobileStickyBar } from './components/MobileStickyBar';
 import { AdminModal } from './components/AdminModal';
+import { NotFound } from './components/NotFound';
+import { useSeo } from './services/seo';
 import {
   getSiteConfig,
   getApkReleases,
@@ -39,6 +41,90 @@ export default function App() {
   const [messages, setMessages] = useState(getContactMessages());
   const [adminModalOpen, setAdminModalOpen] = useState(false);
 
+  // Client-side route synchronization
+  const [currentPath, setCurrentPath] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const path = window.location.pathname.toLowerCase().replace(/\/$/, '') || '/';
+      return path;
+    }
+    return '/';
+  });
+
+  // Map current pathname to SEO key
+  const getPageKey = (path: string): string => {
+    switch (path) {
+      case '/':
+      case '':
+        return 'home';
+      case '/features':
+        return 'features';
+      case '/screenshots':
+        return 'screenshots';
+      case '/download':
+        return 'download';
+      case '/updates':
+        return 'updates';
+      case '/faq':
+        return 'faq';
+      case '/privacy':
+        return 'privacy';
+      case '/contact':
+        return 'contact';
+      default:
+        return 'notFound';
+    }
+  };
+
+  const pageKey = getPageKey(currentPath);
+  useSeo(pageKey);
+
+  // Handle browser popstate (back / forward buttons)
+  useEffect(() => {
+    const handlePopState = () => {
+      const path = window.location.pathname.toLowerCase().replace(/\/$/, '') || '/';
+      setCurrentPath(path);
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
+  // Handle initial deep linking scroll if hash or path is provided
+  useEffect(() => {
+    const hash = window.location.hash;
+    const path = window.location.pathname.toLowerCase().replace(/\/$/, '') || '/';
+
+    if (hash) {
+      const el = document.querySelector(hash);
+      if (el) {
+        setTimeout(() => el.scrollIntoView({ behavior: 'smooth' }), 200);
+      }
+    } else if (path !== '/') {
+      const sectionId = path.replace('/', '');
+      const el = document.getElementById(sectionId);
+      if (el) {
+        setTimeout(() => el.scrollIntoView({ behavior: 'smooth' }), 200);
+      }
+    }
+  }, []);
+
+  // Router navigation helper
+  const navigateTo = useCallback((targetPath: string) => {
+    const normalized = targetPath.toLowerCase().replace(/\/$/, '') || '/';
+    setCurrentPath(normalized);
+    window.history.pushState({}, '', normalized);
+
+    if (normalized === '/') {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } else {
+      const sectionId = normalized.replace('/', '');
+      const el = document.getElementById(sectionId);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth' });
+      }
+    }
+  }, []);
+
   // Subscribe to live reactive updates from storage
   useEffect(() => {
     const unsubscribe = subscribeToStore(() => {
@@ -52,12 +138,12 @@ export default function App() {
     });
 
     // Record initial visit
-    recordVisit('Home');
+    recordVisit(pageKey === 'home' ? 'Home' : pageKey);
 
     return () => {
       unsubscribe();
     };
-  }, []);
+  }, [pageKey]);
 
   // Determine current latest published APK
   const latestApk = releases.find((r) => r.isLatest && r.isPublished) || releases.find((r) => r.isPublished);
@@ -68,18 +154,14 @@ export default function App() {
     screenshots.find((s) => s.isPublished);
 
   const scrollToDownload = () => {
-    const el = document.getElementById('download');
-    if (el) {
-      el.scrollIntoView({ behavior: 'smooth' });
-    }
+    navigateTo('/download');
   };
 
   const scrollToScreenshots = () => {
-    const el = document.getElementById('screenshots');
-    if (el) {
-      el.scrollIntoView({ behavior: 'smooth' });
-    }
+    navigateTo('/screenshots');
   };
+
+  const isKnownRoute = pageKey !== 'notFound';
 
   return (
     <div className="min-h-screen flex flex-col bg-[#FAF7F2] text-slate-800 font-sans selection:bg-amber-100 selection:text-amber-900 pb-16 md:pb-0">
@@ -90,52 +172,84 @@ export default function App() {
         </div>
       )}
 
-      {/* Top Bar Contract Navigation */}
+      {/* Top Bar Navigation */}
       <Navbar
         onDownloadClick={scrollToDownload}
         onAdminClick={() => setAdminModalOpen(true)}
+        activePath={currentPath}
+        onNavigate={navigateTo}
       />
 
       {/* Main Content Flow */}
       <main className="flex-1">
-        {/* 1. Hero Section + Realistic Phone Mockup */}
-        <Hero
-          config={config}
-          latestApk={latestApk}
-          heroScreenshot={heroScreenshot}
-          onDownloadClick={scrollToDownload}
-          onViewScreenshotsClick={scrollToScreenshots}
-        />
+        {isKnownRoute ? (
+          <>
+            {/* 1. Hero Section + Realistic Phone Mockup */}
+            <Hero
+              config={config}
+              latestApk={latestApk}
+              heroScreenshot={heroScreenshot}
+              onDownloadClick={scrollToDownload}
+              onViewScreenshotsClick={scrollToScreenshots}
+            />
 
-        {/* 2. Trust Section (Simple. Private. Easy to Use.) */}
-        <TrustSection />
+            {/* 2. Trust Section (Simple. Private. Easy to Use.) */}
+            <TrustSection />
 
-        {/* 3. App Features Grid */}
-        <FeaturesSection features={features} />
+            {/* 3. App Features Grid */}
+            <FeaturesSection
+              features={features}
+              onDownloadClick={scrollToDownload}
+            />
 
-        {/* 4. App Screenshots with Lightbox */}
-        <ScreenshotsSection screenshots={screenshots} />
+            {/* 4. App Screenshots with Lightbox */}
+            <ScreenshotsSection
+              screenshots={screenshots}
+              onDownloadClick={scrollToDownload}
+            />
 
-        {/* 5. Official Download Section */}
-        <DownloadSection latestApk={latestApk} config={config} />
+            {/* 5. Official Download Section */}
+            <DownloadSection latestApk={latestApk} config={config} />
 
-        {/* 6. Version Updates & Changelog */}
-        <UpdatesSection releases={releases} />
+            {/* 6. Version Updates & Changelog */}
+            <UpdatesSection
+              releases={releases}
+              onDownloadClick={scrollToDownload}
+            />
 
-        {/* 7. Frequently Asked Questions */}
-        <FaqSection faqs={faqs} />
+            {/* 7. Frequently Asked Questions */}
+            <FaqSection
+              faqs={faqs}
+              onDownloadClick={scrollToDownload}
+              onPrivacyClick={() => navigateTo('/privacy')}
+            />
 
-        {/* 8. Privacy Policy */}
-        <PrivacySection config={config} />
+            {/* 8. Privacy Policy */}
+            <PrivacySection
+              config={config}
+              onContactClick={() => navigateTo('/contact')}
+            />
 
-        {/* 9. Contact Developer */}
-        <ContactSection config={config} />
+            {/* 9. Contact Developer */}
+            <ContactSection config={config} />
+          </>
+        ) : (
+          <NotFound
+            onGoHome={() => navigateTo('/')}
+            onGoDownload={scrollToDownload}
+            onGoFeatures={() => navigateTo('/features')}
+          />
+        )}
       </main>
 
       {/* Footer */}
-      <Footer config={config} onAdminClick={() => setAdminModalOpen(true)} />
+      <Footer
+        config={config}
+        onAdminClick={() => setAdminModalOpen(true)}
+        onNavigate={navigateTo}
+      />
 
-      {/* Mobile-First Sticky Download Bar (strictly <= 12% viewport height) */}
+      {/* Mobile-First Sticky Download Bar */}
       <MobileStickyBar
         latestApk={latestApk}
         onDownloadClick={scrollToDownload}

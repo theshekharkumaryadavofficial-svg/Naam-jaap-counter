@@ -1,5 +1,4 @@
 User-agent: *
 Allow: /
-Disallow: /admin
 
-Sitemap: https://naamjapcounter.in/sitemap.xml
+Sitemap: https://naamjap-omega.vercel.app/sitemap.xml

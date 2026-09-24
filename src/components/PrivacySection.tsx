@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
-import { ShieldCheck, Lock, Smartphone, BarChart3, HelpCircle, ChevronRight } from 'lucide-react';
+import { ShieldCheck, Lock, Smartphone, BarChart3, HelpCircle, ChevronRight, ArrowRight } from 'lucide-react';
 import { SiteConfig } from '../types';
 
 interface PrivacySectionProps {
   config: SiteConfig;
+  onContactClick?: () => void;
 }
 
-export const PrivacySection: React.FC<PrivacySectionProps> = ({ config }) => {
+export const PrivacySection: React.FC<PrivacySectionProps> = ({ config, onContactClick }) => {
   const [showFullModal, setShowFullModal] = useState(false);
 
   return (
@@ -17,7 +18,7 @@ export const PrivacySection: React.FC<PrivacySectionProps> = ({ config }) => {
             TRANSPARENCY & TRUST
           </span>
           <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight mt-1 mb-3">
-            Privacy Policy
+            Naam Jap Counter Privacy Policy
           </h2>
           <p className="text-base text-slate-600">
             आपकी साधना और व्यक्तिगत डेटा की सुरक्षा हमारी सर्वोच्च प्राथमिकता है।
@@ -60,114 +61,100 @@ export const PrivacySection: React.FC<PrivacySectionProps> = ({ config }) => {
 
             <div className="flex items-start gap-4">
               <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-700 border border-blue-200 flex items-center justify-center shrink-0">
-                <BarChart3 className="w-5 h-5" />
+                <ShieldCheck className="w-5 h-5" />
               </div>
               <div>
                 <h3 className="text-base font-bold text-slate-900 mb-1">
-                  Privacy-Conscious Analytics
+                  No Login or Personal Info Required
                 </h3>
                 <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
-                  वेबसाइट पर हम केवल कुल पेज विजिट और APK डाउनलोड की कुल संख्या गिनते हैं ताकि
-                  सर्वर की उपलब्धता सुनिश्चित रहे। इसमें कोई भी व्यक्तिगत या निजी पहचान (IP) स्टोर नहीं
-                  होती।
+                  ऐप शुरू करने के लिए ईमेल, फोन नंबर, नाम या सोशल अकाउंट लॉगिन की कोई आवश्यकता नहीं
+                  है। इंस्टॉल करते ही आप बिना रुकावट जाप शुरू कर सकते हैं।
                 </p>
               </div>
             </div>
 
             <div className="flex items-start gap-4">
               <div className="w-10 h-10 rounded-xl bg-purple-50 text-purple-700 border border-purple-200 flex items-center justify-center shrink-0">
-                <HelpCircle className="w-5 h-5" />
+                <BarChart3 className="w-5 h-5" />
               </div>
               <div>
-                <h3 className="text-base font-bold text-slate-900 mb-1">Contact for Privacy</h3>
+                <h3 className="text-base font-bold text-slate-900 mb-1">
+                  Complete Data Control
+                </h3>
                 <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
-                  गोपनीयता या डेटा संबंधित किसी भी प्रश्न के लिए आप सीधे डेवलपर {config.developer} से
-                  संपर्क कर सकते हैं।
+                  आप जब चाहें सेटिंग्स में जाकर अपने पुराने काउंट्स या हिस्ट्री को रीसेट या साफ़ कर
+                  सकते हैं। ऐप अनइंस्टॉल करने पर सारा डेटा फोन से स्वतः डिलीट हो जाता है।
                 </p>
               </div>
             </div>
           </div>
 
-          {/* Full Policy Modal Trigger */}
-          <div className="pt-4 border-t border-amber-900/10 flex flex-col sm:flex-row items-center justify-between gap-4">
-            <span className="text-xs text-slate-500">
-              Last updated: September 2025 · App Version 1.0.0
-            </span>
+          <div className="pt-6 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <p className="text-xs text-slate-500">
+              Last updated: September 2026 · Official policy by Shekhar Kumar
+            </p>
+
             <button
               type="button"
               onClick={() => setShowFullModal(true)}
-              className="inline-flex items-center gap-1.5 text-xs font-bold text-amber-800 hover:text-amber-900 underline underline-offset-4 cursor-pointer"
+              className="inline-flex items-center gap-1.5 text-xs font-bold text-amber-800 hover:text-amber-900 transition-colors cursor-pointer"
             >
-              <span>पूरी Privacy Policy पढ़ें</span>
+              <span>Read Full Legal Terms</span>
               <ChevronRight className="w-4 h-4" />
             </button>
           </div>
         </div>
+
+        {/* Contact developer prompt */}
+        <div className="mt-8 text-center">
+          <a
+            href="#contact"
+            onClick={(e) => {
+              if (onContactClick) {
+                e.preventDefault();
+                onContactClick();
+              }
+            }}
+            className="inline-flex items-center gap-1.5 text-xs text-slate-600 hover:text-amber-800 transition-colors"
+          >
+            <span>Have questions regarding privacy or your data? Contact developer</span>
+            <ArrowRight className="w-3.5 h-3.5" />
+          </a>
+        </div>
       </div>
 
-      {/* Full Privacy Policy Modal */}
+      {/* Full Modal */}
       {showFullModal && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          className="fixed inset-0 z-50 bg-black/70 backdrop-blur-xs flex items-center justify-center p-4"
-        >
-          <div className="bg-white rounded-3xl max-w-2xl w-full max-h-[85vh] overflow-y-auto p-6 sm:p-8 shadow-2xl border border-amber-900/15">
-            <div className="flex items-center justify-between pb-4 border-b border-amber-900/10 mb-4">
-              <div className="flex items-center gap-2">
-                <ShieldCheck className="w-6 h-6 text-emerald-700" />
-                <h3 className="text-xl font-bold text-slate-900">Privacy Policy (विस्तृत विवरण)</h3>
-              </div>
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-white rounded-3xl max-w-2xl w-full p-6 sm:p-8 max-h-[85vh] overflow-y-auto border border-amber-900/20 shadow-2xl">
+            <h3 className="text-2xl font-bold text-slate-900 mb-4">
+              Naam Jap Counter – Full Privacy Document
+            </h3>
+            <div className="text-sm text-slate-600 space-y-4 leading-relaxed">
+              <p>
+                <strong>1. Overview:</strong> Naam Jap Counter is developed by Shekhar Kumar with a commitment to high standards of user privacy. It operates entirely as an offline utility tool for counting sacred names and mantras.
+              </p>
+              <p>
+                <strong>2. Data Collection:</strong> We do not collect, transmit, or store any personal information on external servers. All counts, streaks, targets, and dates remain exclusively inside your Android device's local storage.
+              </p>
+              <p>
+                <strong>3. Permissions:</strong> The app does not request invasive permissions such as contacts, camera, microphone, or GPS location.
+              </p>
+              <p>
+                <strong>4. Third-Party Services:</strong> There are no advertising SDKs (such as AdMob), tracker SDKs, or third-party analytic trackers included in the app.
+              </p>
+              <p>
+                <strong>5. Contact:</strong> For inquiries regarding this Privacy Policy, you may submit a message via the contact form on this website.
+              </p>
+            </div>
+            <div className="mt-6 pt-4 border-t border-slate-100 flex justify-end">
               <button
                 type="button"
                 onClick={() => setShowFullModal(false)}
-                className="text-slate-500 hover:text-slate-800 text-sm font-semibold p-1"
+                className="px-5 py-2.5 bg-slate-900 text-white rounded-xl text-xs font-bold hover:bg-slate-800 cursor-pointer"
               >
-                ✕ बंद करें
-              </button>
-            </div>
-
-            <div className="space-y-4 text-xs sm:text-sm text-slate-700 leading-relaxed">
-              <h4 className="font-bold text-slate-900 text-base">1. हम किन जानकारियों को एकत्र करते हैं?</h4>
-              <p>
-                <strong>वेबसाइट पर:</strong> जब आप हमारी वेबसाइट पर आते हैं, तो हम केवल सामान्य
-                विज़िट और APK डाउनलोड की संख्या की गणना करते हैं। यदि आप कॉन्टैक्ट फॉर्म का उपयोग करते
-                हैं, तो आपके द्वारा स्वेच्छा से दिया गया नाम, ईमेल और संदेश डेवलपर तक पहुँचाया जाता है।
-              </p>
-
-              <h4 className="font-bold text-slate-900 text-base">2. ऐप में क्या स्टोर होता है?</h4>
-              <p>
-                <strong>Naam Jap Counter Android App:</strong> ऐप आपके नाम जाप के आंकड़े, माला गणना,
-                दैनिक लक्ष्य और सेटिंग्स को केवल आपके फोन की आंतरिक मेमोरी (Room / SQLite Database) में
-                रखता है। यह डेटा कभी भी बाहरी सर्वर पर अपलोड नहीं होता।
-              </p>
-
-              <h4 className="font-bold text-slate-900 text-base">3. क्या इंटरनेट आवश्यक है?</h4>
-              <p>
-                नहीं। ऐप को बिना किसी इंटरनेट कनेक्शन के भी पूरी तरह से इस्तेमाल किया जा सकता है।
-              </p>
-
-              <h4 className="font-bold text-slate-900 text-base">4. विज्ञापन और थर्ड पार्टी</h4>
-              <p>
-                ऐप 100% विज्ञापन-मुक्त (Ad-free) है। हम किसी भी विज्ञापन नेटवर्क या डेटा-ब्रोकर के साथ
-                साझेदारी नहीं करते।
-              </p>
-
-              <h4 className="font-bold text-slate-900 text-base">5. संपर्क विवरण</h4>
-              <p>
-                डेवलपर: <strong>{config.developer}</strong>
-                <br />
-                संपर्क: वेबसाइट पर दिए गए Contact फ़ॉर्म के माध्यम से कभी भी संदेश भेज सकते हैं।
-              </p>
-            </div>
-
-            <div className="mt-6 pt-4 border-t border-amber-900/10 text-right">
-              <button
-                type="button"
-                onClick={() => setShowFullModal(false)}
-                className="px-5 py-2.5 bg-slate-900 text-white rounded-xl text-xs font-semibold hover:bg-slate-800 transition-colors"
-              >
-                समझ गया (Close)
+                Close Window
               </button>
             </div>
           </div>

@@ -1,12 +1,18 @@
 import React, { useState } from 'react';
 import { FaqItem } from '../types';
-import { ChevronDown, HelpCircle } from 'lucide-react';
+import { ChevronDown, HelpCircle, ArrowRight } from 'lucide-react';
 
 interface FaqSectionProps {
   faqs: FaqItem[];
+  onDownloadClick?: () => void;
+  onPrivacyClick?: () => void;
 }
 
-export const FaqSection: React.FC<FaqSectionProps> = ({ faqs }) => {
+export const FaqSection: React.FC<FaqSectionProps> = ({
+  faqs,
+  onDownloadClick,
+  onPrivacyClick,
+}) => {
   const [openIds, setOpenIds] = useState<string[]>([faqs[0]?.id || 'faq-1']);
 
   const toggleFaq = (id: string) => {
@@ -23,7 +29,7 @@ export const FaqSection: React.FC<FaqSectionProps> = ({ faqs }) => {
             QUESTIONS & ANSWERS
           </span>
           <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight mt-1 mb-3">
-            Frequently Asked Questions
+            Naam Jap Counter FAQ
           </h2>
           <p className="text-base text-slate-600">
             Naam Jap Counter ऐप से जुड़े सामान्य सवाल और उनके स्पष्ट उत्तर।
@@ -64,6 +70,38 @@ export const FaqSection: React.FC<FaqSectionProps> = ({ faqs }) => {
               </div>
             );
           })}
+        </div>
+
+        {/* Helpful links underneath FAQ */}
+        <div className="mt-10 pt-6 border-t border-slate-100 flex flex-wrap items-center justify-center gap-6 text-xs font-medium text-slate-600">
+          <span>Need more details?</span>
+          <a
+            href="#download"
+            onClick={(e) => {
+              if (onDownloadClick) {
+                e.preventDefault();
+                onDownloadClick();
+              }
+            }}
+            className="text-emerald-700 hover:text-emerald-800 font-semibold inline-flex items-center gap-1"
+          >
+            <span>Download Section</span>
+            <ArrowRight className="w-3 h-3" />
+          </a>
+          <span>·</span>
+          <a
+            href="#privacy"
+            onClick={(e) => {
+              if (onPrivacyClick) {
+                e.preventDefault();
+                onPrivacyClick();
+              }
+            }}
+            className="text-amber-800 hover:text-amber-900 font-semibold inline-flex items-center gap-1"
+          >
+            <span>Read Privacy Policy</span>
+            <ArrowRight className="w-3 h-3" />
+          </a>
         </div>
       </div>
     </section>

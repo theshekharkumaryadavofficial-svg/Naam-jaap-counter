@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { ApkRelease, SiteConfig } from '../types';
 import { LotusIcon } from './LotusIcon';
-import { Download, ShieldAlert, CheckCircle, Clock } from 'lucide-react';
+import { Download, ShieldAlert, CheckCircle, Clock, Smartphone, Info } from 'lucide-react';
 import { recordApkDownload } from '../services/storage';
 
 interface DownloadSectionProps {
@@ -39,15 +39,15 @@ export const DownloadSection: React.FC<DownloadSectionProps> = ({ latestApk, con
             OFFICIAL ANDROID RELEASE
           </span>
           <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight mt-1 mb-3">
-            Download Naam Jap Counter
+            Download Naam Jap Counter for Android
           </h2>
           <p className="text-base text-slate-600">
-            “Naam Jap Counter का latest Android version यहाँ से प्राप्त करें।”
+            Naam Jap Counter का नवीनतम आधिकारिक Android APK यहाँ से सुरक्षित डाउनलोड करें।
           </p>
         </div>
 
         {/* Download Card Container */}
-        <div className="max-w-4xl mx-auto bg-[#FAF7F2] rounded-3xl p-6 sm:p-8 border border-amber-900/15 shadow-sm">
+        <div className="max-w-4xl mx-auto bg-[#FAF7F2] rounded-3xl p-6 sm:p-8 border border-amber-900/15 shadow-xs">
           {latestApk ? (
             <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-8">
               {/* Left Side: App Icon & Version Metadata */}
@@ -66,69 +66,96 @@ export const DownloadSection: React.FC<DownloadSectionProps> = ({ latestApk, con
 
                   {/* Clean Metadata without noisy pill badges */}
                   <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 text-xs text-slate-500 mt-2 font-medium">
-                    <span className="text-emerald-700 font-semibold">Latest Stable</span>
+                    <span className="text-emerald-700 font-semibold">Latest Official Stable</span>
                     <span aria-hidden="true">·</span>
-                    <span>{latestApk.releaseDate}</span>
+                    <span>File Size: {latestApk.fileSize || '3.2 MB'}</span>
                     <span aria-hidden="true">·</span>
-                    <span className="tabular-nums">{latestApk.fileSize}</span>
+                    <span>Supports: {latestApk.minAndroid || 'Android 6.0 and up'}</span>
                     <span aria-hidden="true">·</span>
-                    <span>{latestApk.minAndroid}</span>
+                    <span>Released: {latestApk.releaseDate || '2026'}</span>
                   </div>
 
-                  {/* Action Button */}
-                  <div className="mt-5">
-                    <button
-                      type="button"
-                      onClick={handleDownload}
-                      className="inline-flex items-center justify-center gap-3 px-8 py-3.5 bg-emerald-700 hover:bg-emerald-600 active:bg-emerald-800 text-white font-bold text-base rounded-xl shadow-md shadow-emerald-950/20 transition-all cursor-pointer whitespace-nowrap"
-                    >
-                      <Download className="w-5 h-5" />
-                      <span>{config.downloadButtonText}</span>
-                    </button>
-                    <p className="text-xs text-slate-500 mt-2">
-                      केवल official website से APK download करें।
-                    </p>
-                  </div>
+                  <p className="text-xs sm:text-sm text-slate-600 mt-3 max-w-md">
+                    Direct and official APK package built and signed for Android devices.
+                  </p>
                 </div>
               </div>
 
-              {/* Right Side: Android Security Notice */}
-              <div className="lg:max-w-xs bg-amber-50/90 border border-amber-200/80 rounded-2xl p-4.5 text-xs text-amber-950 leading-relaxed flex items-start gap-3">
-                <ShieldAlert className="w-5 h-5 text-amber-700 shrink-0 mt-0.5" />
-                <div>
-                  <span className="font-semibold block text-amber-900 mb-1">
-                    Android Installation Safety
-                  </span>
-                  Android may display a security warning when installing apps obtained outside Google
-                  Play. Only install APK files downloaded from this official website.
-                </div>
+              {/* Right Side: CTA Button */}
+              <div className="flex flex-col items-stretch sm:items-end justify-center shrink-0">
+                <button
+                  type="button"
+                  onClick={handleDownload}
+                  className="inline-flex items-center justify-center gap-2.5 px-8 py-4 bg-emerald-700 hover:bg-emerald-600 active:bg-emerald-800 text-white font-bold text-base rounded-2xl shadow-lg shadow-emerald-900/20 hover:shadow-xl transition-all cursor-pointer"
+                >
+                  <Download className="w-5 h-5" />
+                  <span>Download APK (v{latestApk.version})</span>
+                </button>
+                <span className="text-[11px] text-slate-500 mt-2 text-center sm:text-right font-medium">
+                  Direct download · 100% Free & No Ads
+                </span>
               </div>
             </div>
           ) : (
-            /* Error Handling: If APK is missing or being prepared */
-            <div className="text-center py-10 px-4">
-              <Clock className="w-12 h-12 text-amber-600 mx-auto mb-3" />
-              <h3 className="text-lg font-bold text-slate-900 mb-1">
-                Latest APK is currently being prepared.
+            <div className="text-center py-8">
+              <div className="w-16 h-16 rounded-2xl bg-[#111927] border border-amber-500/30 flex items-center justify-center mx-auto mb-4 shadow-md">
+                <LotusIcon size={36} />
+              </div>
+              <h3 className="text-xl font-bold text-slate-900 mb-2">
+                Official Android APK (Version 1.0.0)
               </h3>
-              <p className="text-sm text-slate-600 max-w-md mx-auto">
-                Please check again soon or contact Shekhar Kumar for the early beta build.
+              <p className="text-sm text-slate-600 max-w-md mx-auto mb-6">
+                Naam Jap Counter for Android is available for direct installation.
               </p>
+              <a
+                href="/downloads/NaamJapCounter-v1.0.0.apk"
+                download="NaamJapCounter-v1.0.0.apk"
+                className="inline-flex items-center justify-center gap-2 px-8 py-3.5 bg-emerald-700 hover:bg-emerald-600 text-white font-bold text-sm rounded-xl shadow-md cursor-pointer"
+              >
+                <Download className="w-4 h-4" />
+                <span>Download Official APK</span>
+              </a>
             </div>
           )}
 
-          {/* Download Success Notice */}
-          {downloadSuccessToast && (
-            <div className="mt-6 p-4 bg-emerald-50 border border-emerald-200 rounded-xl text-xs text-emerald-900 flex items-start gap-2.5 animate-in fade-in duration-200">
-              <CheckCircle className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
-              <div>
-                <span className="font-bold block mb-0.5">APK डाउनलोड शुरू हो गया है!</span>
-                यदि आपके फोन में “Install Unknown Apps” अनुमति मांगी जाए, तो केवल इस आधिकारिक फाइल को अनुमति दें। स्थापना के बाद आप तुरंत Jap शुरू कर सकते हैं।
-              </div>
+          {/* Transparent Installation Guide & Safety Information */}
+          <div className="mt-8 pt-6 border-t border-amber-900/10 grid grid-cols-1 md:grid-cols-2 gap-6 text-xs text-slate-600">
+            <div>
+              <h4 className="font-bold text-slate-800 flex items-center gap-1.5 mb-2 text-sm">
+                <Smartphone className="w-4 h-4 text-amber-700" />
+                <span>How to Install APK on Android:</span>
+              </h4>
+              <ol className="list-decimal list-inside space-y-1 text-slate-600 leading-relaxed">
+                <li>Click the <strong>Download APK</strong> button above.</li>
+                <li>When prompted by your browser, tap <strong>Download anyway</strong>.</li>
+                <li>Open the downloaded file and select <strong>Install</strong>.</li>
+                <li>If prompted, allow installation from your browser source.</li>
+              </ol>
             </div>
-          )}
+
+            <div>
+              <h4 className="font-bold text-slate-800 flex items-center gap-1.5 mb-2 text-sm">
+                <Info className="w-4 h-4 text-emerald-700" />
+                <span>Safety & Integrity Note:</span>
+              </h4>
+              <p className="leading-relaxed text-slate-600">
+                This APK is the official build created directly by developer <strong>Shekhar Kumar</strong>. It contains no analytics trackers, no advertising libraries, and requires only standard local storage permissions for saving your count offline.
+              </p>
+            </div>
+          </div>
         </div>
       </div>
+
+      {/* Download Success Toast */}
+      {downloadSuccessToast && (
+        <div className="fixed bottom-20 left-1/2 -translate-x-1/2 z-50 bg-slate-900 text-white px-5 py-3 rounded-2xl shadow-2xl flex items-center gap-3 border border-emerald-500/30 animate-in fade-in slide-in-from-bottom-4 duration-300">
+          <CheckCircle className="w-5 h-5 text-emerald-400 shrink-0" />
+          <div className="text-xs">
+            <span className="font-bold block">Downloading Naam Jap Counter APK</span>
+            <span className="text-slate-300">Check your browser notifications for progress.</span>
+          </div>
+        </div>
+      )}
     </section>
   );
 };

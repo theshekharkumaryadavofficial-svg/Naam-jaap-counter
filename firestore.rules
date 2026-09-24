@@ -1,0 +1,29 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Anyone can read public app configurations, APKs, screenshots, features, and FAQs
+    match /site_config/{document=**} {
+      allow read: if true;
+      allow write: if true;
+    }
+    match /apk_releases/{document=**} {
+      allow read: if true;
+      allow write: if true;
+    }
+    match /screenshots/{document=**} {
+      allow read: if true;
+      allow write: if true;
+    }
+    match /features/{document=**} {
+      allow read: if true;
+      allow write: if true;
+    }
+    match /faqs/{document=**} {
+      allow read: if true;
+      allow write: if true;
+    }
+    match /contact_messages/{document=**} {
+      allow read, write: if true;
+    }
+  }
+}

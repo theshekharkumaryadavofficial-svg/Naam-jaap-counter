@@ -2,14 +2,18 @@ import React, { useState } from 'react';
 import { ScreenshotItem } from '../types';
 import { PhoneMockup } from './PhoneMockup';
 import { ScreenshotLightbox } from './ScreenshotLightbox';
-import { Maximize2 } from 'lucide-react';
+import { Maximize2, ArrowRight } from 'lucide-react';
 import { recordScreenshotView } from '../services/storage';
 
 interface ScreenshotsSectionProps {
   screenshots: ScreenshotItem[];
+  onDownloadClick?: () => void;
 }
 
-export const ScreenshotsSection: React.FC<ScreenshotsSectionProps> = ({ screenshots }) => {
+export const ScreenshotsSection: React.FC<ScreenshotsSectionProps> = ({
+  screenshots,
+  onDownloadClick,
+}) => {
   const [selectedScreenshot, setSelectedScreenshot] = useState<ScreenshotItem | null>(null);
 
   // Filter only published screenshots sorted by displayOrder
@@ -22,6 +26,23 @@ export const ScreenshotsSection: React.FC<ScreenshotsSectionProps> = ({ screensh
     recordScreenshotView(item.title);
   };
 
+  const getDescriptiveAltText = (item: ScreenshotItem) => {
+    switch (item.screenKey) {
+      case 'home':
+        return 'Naam Jap Counter Android app home screen showing 108 Mala count and tap interface';
+      case 'target':
+        return 'Naam Jap Counter daily progress screen with custom daily goal settings';
+      case 'history':
+        return 'Naam Jap Counter history and streak screen with daily and weekly logs';
+      case 'analytics':
+        return 'Naam Jap Counter analytics and progress tracking graphs';
+      case 'settings':
+        return 'Naam Jap Counter settings screen for reminders, dark mode and vibration';
+      default:
+        return `Naam Jap Counter Android app screen: ${item.title}`;
+    }
+  };
+
   return (
     <section id="screenshots" className="py-16 md:py-24 bg-[#FAF7F2] border-b border-amber-900/10">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -30,10 +51,10 @@ export const ScreenshotsSection: React.FC<ScreenshotsSectionProps> = ({ screensh
             REAL INTERFACES
           </span>
           <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight mt-1 mb-3">
-            App Screenshots
+            Naam Jap Counter Screenshots
           </h2>
           <p className="text-base text-slate-600">
-            “Naam Jap Counter को इस्तेमाल करते समय मिलने वाले मुख्य screens।”
+            Naam Jap Counter को इस्तेमाल करते समय मिलने वाले मुख्य screens और वास्तविक अनुभव।
           </p>
         </div>
 
@@ -46,7 +67,10 @@ export const ScreenshotsSection: React.FC<ScreenshotsSectionProps> = ({ screensh
               className="group cursor-pointer flex flex-col items-center focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-amber-500 rounded-3xl p-2 transition-transform duration-200 hover:-translate-y-1.5"
             >
               {/* Phone Thumbnail */}
-              <div className="relative w-full max-w-[240px] sm:max-w-none">
+              <div
+                className="relative w-full max-w-[240px] sm:max-w-none"
+                aria-label={getDescriptiveAltText(item)}
+              >
                 <PhoneMockup
                   initialScreen={item.screenKey}
                   customImageUrl={item.imageUrl}
@@ -58,13 +82,13 @@ export const ScreenshotsSection: React.FC<ScreenshotsSectionProps> = ({ screensh
                 {/* Hover overlay hint */}
                 <div className="absolute inset-0 bg-black/40 rounded-[42px] opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                   <div className="px-3.5 py-2 bg-white/90 backdrop-blur-xs text-slate-900 text-xs font-bold rounded-full shadow-lg flex items-center gap-1.5 transform scale-90 group-hover:scale-100 transition-transform">
-                    <Maximize2 className="w-3.5 h-3.5 text-amber-600" />
+                    <Maximize2 className="w-3.5 h-3.5 text-amber-800" />
                     <span>View Screen</span>
                   </div>
                 </div>
               </div>
 
-              {/* Title & Subtitle */}
+              {/* Caption */}
               <div className="mt-4 text-center">
                 <h3 className="text-sm font-bold text-slate-900 group-hover:text-amber-800 transition-colors">
                   {item.title}
@@ -74,18 +98,32 @@ export const ScreenshotsSection: React.FC<ScreenshotsSectionProps> = ({ screensh
             </div>
           ))}
         </div>
+
+        {/* Internal Link to Download */}
+        <div className="mt-12 text-center">
+          <a
+            href="#download"
+            onClick={(e) => {
+              if (onDownloadClick) {
+                e.preventDefault();
+                onDownloadClick();
+              }
+            }}
+            className="inline-flex items-center gap-2 text-sm font-semibold text-emerald-800 hover:text-emerald-700 bg-emerald-50 px-5 py-2.5 rounded-xl border border-emerald-200 transition-colors"
+          >
+            <span>Get the official Android app now</span>
+            <ArrowRight className="w-4 h-4" />
+          </a>
+        </div>
       </div>
 
-      {/* Fullscreen Lightbox Modal */}
-      <ScreenshotLightbox
-        screenshot={selectedScreenshot}
-        screenshots={publishedScreenshots}
-        onClose={() => setSelectedScreenshot(null)}
-        onSelect={(item) => {
-          setSelectedScreenshot(item);
-          recordScreenshotView(item.title);
-        }}
-      />
+      {/* Lightbox Modal */}
+      {selectedScreenshot && (
+        <ScreenshotLightbox
+          screenshot={selectedScreenshot}
+          onClose={() => setSelectedScreenshot(null)}
+        />
+      )}
     </section>
   );
 };
